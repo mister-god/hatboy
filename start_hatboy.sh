@@ -36,7 +36,7 @@ elif [[ $option -eq 2 ]]; then
         sleep 3  # Allow server to initialize
 
         # Start Cloudflare Tunnel and fetch the public URL
-        echo "Starting Cloudflare Tunnel on port 4444..."
+        echo "Starting Cloudflare Tunnel on port 8080..."
         TUNNEL_URL=$(cloudflared tunnel --url http://localhost:8080 2>&1 | grep -oE "https://[a-z0-9.-]+")
 
         if [[ -n "$TUNNEL_URL" ]]; then
