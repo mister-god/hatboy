@@ -5,7 +5,7 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
 ## Features
 - **Interactive Local Website**: A user-friendly interface to request and collect browser cookies after user consent.
 - **Secure Cookie Storage**: Saves browser cookies in a pre-defined JSON file for debugging and analysis purposes.
-- **Live Deployment Option**: Easily make the local website live using Cloudflare Tunnel.
+- **Live Deployment Option**: Automatically generates a live URL using Cloudflare Tunnel.
 
 ## Installation Guide
 
@@ -38,36 +38,33 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
    ```
 
 5. **Configure the Tunnel**
-   - Create a `config.yml` file:
-     ```yaml
-     tunnel: hatboy
-     credentials-file: /path/to/.cloudflared/hatboy.json
-
-     ingress:
-       - hostname: hatboy.example.com
-         service: http://localhost:8080
-       - service: http_status:404
+   - Save the `config.yml` file in the `.cloudflared` directory:
+     ```bash
+     mv config.yml ~/.cloudflared/config.yml
      ```
 
-6. **Start the Tool**
+6. **Run the Tool**
    ```bash
    bash start_hatboy.sh
    ```
 
 ## Usage
-1. Open your browser and navigate to `http://localhost:8080`.
-2. Allow cookies by clicking the "Allow Cookies" button on the page.
-3. The cookies will be saved to a file named `cookies.json` in the root directory.
-4. If you configured Cloudflare Tunnel, access the live site using the hostname you configured in the `config.yml`.
+1. Upon running the `start_hatboy.sh` script, the tool will:
+   - Start the local Flask web server.
+   - Automatically start the Cloudflare Tunnel on port `4444`.
+   - Generate a live URL to access the site.
+
+2. Open the live URL displayed on the terminal to access the tool.
 
 ## File Structure
 ```
 hatboy/
-├── hatboy_server.py       # Flask server script
-├── start_hatboy.sh        # Bash script to start the tool
+├── hatboy_server.py       # Flask server
+├── start_hatboy.sh        # Main script
+├── config.yml             # Cloudflare Tunnel config
 ├── templates/
-│   └── index.html         # HTML template for the local site
-├── cookies.json           # File where cookies are saved
+│   └── index.html         # HTML template
+├── cookies/               # Captured cookies
 └── README.md              # Documentation
 ```
 
