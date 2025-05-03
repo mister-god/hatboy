@@ -5,7 +5,7 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
 ## Features
 - **Interactive Local Website**: A user-friendly interface to request and collect browser cookies after user consent.
 - **Secure Cookie Storage**: Saves browser cookies in a pre-defined JSON file for debugging and analysis purposes.
-- **Live Deployment Option**: Automatically generates a live URL using Cloudflare Tunnel.
+- **Live Deployment Option**: Automatically generates a live URL using Cloudflare Tunnel without requiring login or configuration.
 
 ## Installation Guide
 
@@ -13,7 +13,7 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
 1. **Python 3.x**
    - Install Python from [python.org](https://www.python.org/).
 2. **Cloudflared**
-   - Install Cloudflare Tunnel by following the instructions [here](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/).
+   - Download and install Cloudflare Tunnel from [cloudflare.com](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/).
 
 ### Steps to Install and Run
 1. **Clone the Repository**
@@ -24,26 +24,10 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
 
 2. **Install Dependencies**
    ```bash
-   pip install flask
+   pip install -r requirements.txt
    ```
 
-3. **Authenticate Cloudflare Tunnel**
-   ```bash
-   cloudflared tunnel login
-   ```
-
-4. **Create a Cloudflare Tunnel**
-   ```bash
-   cloudflared tunnel create hatboy
-   ```
-
-5. **Configure the Tunnel**
-   - Save the `config.yml` file in the `.cloudflared` directory:
-     ```bash
-     mv config.yml ~/.cloudflared/config.yml
-     ```
-
-6. **Run the Tool**
+3. **Run the Tool**
    ```bash
    bash start_hatboy.sh
    ```
@@ -61,7 +45,7 @@ Hatboy is a lightweight and ethical tool designed for testing and debugging purp
 hatboy/
 ├── hatboy_server.py       # Flask server
 ├── start_hatboy.sh        # Main script
-├── config.yml             # Cloudflare Tunnel config
+├── requirements.txt       # Python dependencies
 ├── templates/
 │   └── index.html         # HTML template
 ├── cookies/               # Captured cookies
