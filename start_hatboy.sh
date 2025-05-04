@@ -11,13 +11,11 @@ printf "\e[1;77m     __/_____\__ \e[0m\n"
 printf "\e[1;77m    |___________| \e[0m\n"
 printf "\e[1;77m     MISTER  X \e[0m\n"
 
-# Function to check and install Cloudflare Tunnel binary
 install_cloudflared() {
     if [[ ! -e cloudflared ]]; then
         echo "Cloudflared binary not found. Downloading..."
         arch=$(uname -m)
         os=$(uname -s)
-
         case "$os" in
             "Linux")
                 case "$arch" in
@@ -34,69 +32,47 @@ install_cloudflared() {
                     *) echo "Unsupported macOS architecture: $arch"; exit 1 ;;
                 esac
                 ;;
-            *)
-                echo "Unsupported operating system: $os"
-                exit 1
-                ;;
+            *) echo "Unsupported OS: $os"; exit 1 ;;
         esac
-
         wget --no-check-certificate "$url" -O cloudflared
         chmod +x cloudflared
         echo "Cloudflared installed successfully."
     fi
 }
 
-# Function to start the Flask server
 start_local_server() {
     echo "Starting local Flask server on port 8080..."
     python3 hatboy_server.py &
     SERVER_PID=$!
     sleep 3
-
     if ps -p $SERVER_PID > /dev/null; then
         echo "Local server started successfully."
     else
-        echo "Failed to start local server. Ensure Flask is installed and try again."
+        echo "Failed to start local server. Ensure Flask is installed."
         exit 1
     fi
 }
 
-# Function to start the Cloudflare Tunnel
 start_cloudflare_tunnel() {
     echo "Starting Cloudflare Tunnel..."
     ./cloudflared tunnel --url http://localhost:8080 --logfile .cloudflared.log > /dev/null 2>&1 &
     sleep 10
-
     TUNNEL_URL=$(grep -o 'https://[-0-9a-z]*\.trycloudflare.com' .cloudflared.log)
     if [[ -z "$TUNNEL_URL" ]]; then
-        echo "Failed to generate Cloudflare URL. Possible reasons:"
-        echo "- Cloudflare Tunnel service might be down."
-        echo "- Check your internet connection."
-        echo "- Run './cloudflared tunnel --url http://localhost:8080' manually to debug."
+        echo "Failed to generate Cloudflare URL. Check your connection or run manually."
         exit 1
     fi
-
     echo -e "Your site is live at: \e[1;92m$TUNNEL_URL\e[0m"
 }
 
-# Main menu
 echo "Welcome to Hatboy!"
-echo "Please select an option to start:"
+echo "Please select an option:"
 echo "1. Start Local Server"
 echo "2. Use Cloudflare Tunnel"
 read -p "Select an option (1 or 2): " option
 
 case $option in
-    1)
-        start_local_server
-        ;;
-    2)
-        install_cloudflared
-        start_local_server
-        start_cloudflare_tunnel
-        ;;
-    *)
-        echo "Invalid option! Exiting..."
-        exit 1
-        ;;
+    1) start_local_server ;;
+    2) install_cloudflared; start_local_server; start_cloudflare_tunnel ;;
+    *) echo "Invalid option! Exiting..."; exit 1 ;;
 esac
