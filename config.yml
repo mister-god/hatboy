@@ -1,7 +1,0 @@
-tunnel: hatboy
-credentials-file: /path/to/.cloudflared/hatboy.json
-
-ingress:
-  - service: http://localhost:8080
-    port: 4444
-  - service: http_status:404
