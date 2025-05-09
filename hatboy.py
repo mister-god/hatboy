@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import platform
+import shutil  # Fix: Import shutil to use shutil.which()
 
 CONFIG_FILE = "config.json"
 
