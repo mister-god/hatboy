@@ -10,16 +10,16 @@ HatBoy is a tool designed for ethical penetration testing and browser vulnerabil
 
 ## Usage
 1. Clone the repository:
-   ```
+   ```bash
    git clone https://github.com/your-repo/hatboy.git
    cd hatboy
    ```
 2. Install dependencies:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 3. Run the tool:
-   ```
+   ```bash
    python hatboy.py
    ```
 4. Select a tunneling option and launch the phishing template.
