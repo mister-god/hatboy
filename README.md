@@ -1,65 +1,31 @@
-# Hatboy Tool
+# HatBoy Ethical Testing Tool
 
-Hatboy is a lightweight and ethical tool designed for testing and debugging purposes. It allows you to collect browser cookies upon user consent through a locally hosted web interface. Additionally, Hatboy offers a live deployment option via Cloudflare Tunnel for remote accessibility.
+## Description
+HatBoy is a tool designed for ethical penetration testing and browser vulnerability assessment. It should only be used in authorized environments to demonstrate how attackers might exploit vulnerabilities and how developers can protect against them.
 
 ## Features
-- **Interactive Local Website**: A user-friendly interface to request and collect browser cookies after user consent.
-- **Secure Cookie Storage**: Saves browser cookies in a pre-defined JSON file for debugging and analysis purposes.
-- **Live Deployment Option**: Automatically generates a live URL using Cloudflare Tunnel without requiring login or complex configuration.
-- **Cross-Platform Compatibility**: Automatically detects and configures `cloudflared` for various operating systems and architectures.
+- Simulates scenarios for camera, microphone, and location access.
+- Provides editable templates for testing phishing-style attacks.
+- Generates logs of test results for educational purposes.
 
-## Installation Guide
-
-### Prerequisites
-1. **Python 3.x**
-   - Install Python from [python.org](https://www.python.org/).
-2. **Cloudflared (No Manual Installation Required)**
-   - The script automatically downloads and configures Cloudflare Tunnel.
-
-### Steps to Install and Run
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/mister-god/hatboy.git
-   cd hatboy
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run the Tool**
-   ```bash
-   bash start_hatboy.sh
-   ```
+## Setup
+1. Clone the repository: `git clone https://github.com/your-repo/hatboy.git`
+2. Install dependencies (if any): `pip install -r requirements.txt`
+3. Run the setup file: `python setup.py`
+4. Choose a hosting option:
+    - Localhost
+    - Cloudflared
+    - LocalXpose
 
 ## Usage
-1. Upon running the `start_hatboy.sh` script, the tool will:
-   - Start the local Flask web server on port `8080`.
-   - Automatically start the Cloudflare Tunnel.
-   - Generate a live URL to access the site.
+### Generated Links
+- **Victim URL**: Simulates the client-side behavior.
+- **Attacker URL**: Provides a dashboard for viewing collected data (authorized use only).
 
-2. Open the live URL displayed on the terminal to interact with the tool.
-
-### Menu Options
-- **Option 1: Start Local Server**
-  - Launches the web tool locally.
-- **Option 2: Use Cloudflare Tunnel**
-  - Exposes the local web tool to the internet with a secure URL using Cloudflare.
-
-## File Structure
-```
-hatboy/
-├── hatboy_server.py       # Flask server
-├── start_hatboy.sh        # Main script
-├── requirements.txt       # Python dependencies
-├── templates/
-│   └── index.html         # HTML template
-├── cookies/               # Captured cookies
-└── README.md              # Documentation
-```
+### Ethical Guidelines
+- Obtain proper authorization before using this tool.
+- Use it strictly for educational and ethical purposes.
+- Do not use it for malicious or illegal activities.
 
 ## Disclaimer
-This tool is intended only for ethical purposes, such as testing and debugging, and must be used in compliance with all applicable laws and regulations. Always ensure explicit user consent before collecting or storing any data through this tool.
-
----
+The creators of this tool are not responsible for any misuse. Use it responsibly and ethically.
