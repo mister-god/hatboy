@@ -1,3 +1,2 @@
 # Dependencies for HatBoy Ethical Testing Tool
 cloudflared
-localxpose
