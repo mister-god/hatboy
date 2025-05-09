@@ -10,7 +10,7 @@ HatBoy is a tool designed for ethical penetration testing and browser vulnerabil
 
 ## Setup
 1. Clone the repository: `git clone https://github.com/your-repo/hatboy.git`
-2. Install dependencies (if any): `pip install -r requirements.txt`
+2. Install dependencies: `pip install -r requirements.txt`
 3. Run the setup file: `python setup.py`
 4. Choose a hosting option:
     - Localhost
