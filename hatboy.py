@@ -101,9 +101,12 @@ def install_localxpose():
         try:
             subprocess.run(["curl", "-s", "-L", "-o", loclx_path, url], check=True)
             os.chmod(loclx_path, 0o755)
-            if os.path.exists(loclx_path):
+            if os.path.exists(loclx_path) and os.access(loclx_path, os.X_OK):
                 print("[*] LocalXpose installed successfully.")
                 return
+            else:
+                print("[!] LocalXpose binary is not executable. Please check the file.")
+                exit(1)
         except subprocess.CalledProcessError as e:
             print(f"[!] Attempt {attempt + 1}/{retries} failed: {e}")
             if attempt < retries - 1:
