@@ -18,7 +18,7 @@ def display_banner():
     print("██║  ██║██║  ██║   ██║   ██████╔╝╚██████╔╝╚██████╔╝")
     print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
     print("\033[1;94m")
-    print("                H A T B O Y")
+    print("                H A T B OY")
     print("         Ethical Testing Tool v2.0")
     print("\033[1;93m")
     print("       Developed by Mister-God")
@@ -78,6 +78,39 @@ def install_cloudflared():
                 time.sleep(5)
             else:
                 print("[!] Cloudflared installation failed after multiple attempts.")
+                exit(1)
+
+# Install LocalXpose
+def install_localxpose():
+    print("[*] Installing LocalXpose...")
+    if not os.path.exists(".server"):
+        os.makedirs(".server")
+
+    arch = platform.machine()
+    if arch == "x86_64":
+        url = "https://github.com/localxpose/loclx/releases/latest/download/loclx-linux-amd64"
+    elif "arm" in arch:
+        url = "https://github.com/localxpose/loclx/releases/latest/download/loclx-linux-arm"
+    else:
+        print("[!] Unsupported architecture.")
+        return
+
+    loclx_path = ".server/loclx"
+    retries = 3
+    for attempt in range(retries):
+        try:
+            subprocess.run(["curl", "-s", "-L", "-o", loclx_path, url], check=True)
+            os.chmod(loclx_path, 0o755)
+            if os.path.exists(loclx_path):
+                print("[*] LocalXpose installed successfully.")
+                return
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                print("[*] Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                print("[!] LocalXpose installation failed after multiple attempts.")
                 exit(1)
 
 # Enhanced error handling for Cloudflared tunnel
