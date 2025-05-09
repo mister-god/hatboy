@@ -6,6 +6,22 @@ import shutil
 
 CONFIG_FILE = "config.json"
 
+# ASCII Art Banner
+def display_banner():
+    print("\033[1;93m      _______        \033[0m")
+    print("\033[1;93m     /       \\\\      \033[0m")
+    print("\033[1;93m    /  _____  \\\\     \033[0m")
+    print("\033[1;92m   |  |     |  |     \033[0m")
+    print("\033[1;92m   |  | o o |  |     \033[0m")
+    print("\033[1;92m   |  |  ^  |  |     \033[0m")
+    print("\033[1;92m   |  | '-' |  |     \033[0m")
+    print("\033[1;97m    \  \___/  /      \033[0m")
+    print("\033[1;97m     \_______/       \033[0m")
+    print("\033[1;96m     / ||||| \       \033[0m")
+    print("\033[1;96m    /  |||||  \      \033[0m")
+    print("\033[1;96m   |___|||||___|     \033[0m")
+    print("\033[1;94m    [ MISTER X ]      \033[0m\n")
+
 # Load or initialize the configuration file
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -158,6 +174,7 @@ def main_menu():
         print("[!] Invalid choice. Exiting.")
 
 if __name__ == "__main__":
+    display_banner()  # Call the banner function
     if not os.path.exists(".server/www"):
         os.makedirs(".server/www")
     check_dependencies()
