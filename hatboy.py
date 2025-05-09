@@ -2,7 +2,7 @@ import os
 import json
 import subprocess
 import platform
-import shutil  # Fix: Import shutil to use shutil.which()
+import shutil
 
 CONFIG_FILE = "config.json"
 
@@ -32,6 +32,9 @@ def check_dependencies():
 # Install Cloudflared
 def install_cloudflared():
     print("[*] Installing Cloudflared...")
+    if not os.path.exists(".server"):
+        os.makedirs(".server")
+
     arch = platform.machine()
     if arch == "x86_64":
         url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
@@ -40,13 +43,23 @@ def install_cloudflared():
     else:
         print("[!] Unsupported architecture.")
         return
-    subprocess.run(["curl", "-s", "-L", "-o", ".server/cloudflared", url], check=True)
-    os.chmod(".server/cloudflared", 0o755)
+
+    cloudflared_path = ".server/cloudflared"
+    subprocess.run(["curl", "-s", "-L", "-o", cloudflared_path, url], check=True)
+    os.chmod(cloudflared_path, 0o755)
+
+    if not os.path.exists(cloudflared_path):
+        print("[!] Cloudflared installation failed. Please check your connection or try again.")
+        exit(1)
+
     print("[*] Cloudflared installed successfully.")
 
 # Install LocalXpose
 def install_localxpose():
     print("[*] Installing LocalXpose...")
+    if not os.path.exists(".server"):
+        os.makedirs(".server")
+
     arch = platform.machine()
     if arch == "x86_64":
         url = "https://api.localxpose.io/api/v2/downloads/loclx-linux-amd64.zip"
@@ -55,10 +68,17 @@ def install_localxpose():
     else:
         print("[!] Unsupported architecture.")
         return
-    subprocess.run(["curl", "-s", "-L", "-o", "loclx.zip", url], check=True)
-    subprocess.run(["unzip", "-qq", "loclx.zip", "-d", ".server"], check=True)
+
+    loclx_zip_path = "loclx.zip"
+    subprocess.run(["curl", "-s", "-L", "-o", loclx_zip_path, url], check=True)
+    subprocess.run(["unzip", "-qq", loclx_zip_path, "-d", ".server"], check=True)
     os.chmod(".server/loclx", 0o755)
-    os.remove("loclx.zip")
+    os.remove(loclx_zip_path)
+
+    if not os.path.exists(".server/loclx"):
+        print("[!] LocalXpose installation failed. Please check your connection or try again.")
+        exit(1)
+
     print("[*] LocalXpose installed successfully.")
 
 # Start a PHP server
@@ -70,19 +90,30 @@ def start_php_server(port):
 
 # Start Cloudflared
 def start_cloudflared(port):
+    cloudflared_path = ".server/cloudflared"
+    if not os.path.exists(cloudflared_path):
+        print("[!] Cloudflared binary is missing. Attempting to reinstall...")
+        install_cloudflared()
+
     print("[*] Starting Cloudflared...")
-    subprocess.Popen([".server/cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"], stdout=subprocess.PIPE)
+    subprocess.Popen([cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"], stdout=subprocess.PIPE)
 
 # Start LocalXpose
 def start_localxpose(port):
+    loclx_path = ".server/loclx"
+    if not os.path.exists(loclx_path):
+        print("[!] LocalXpose binary is missing. Attempting to reinstall...")
+        install_localxpose()
+
     config = load_config()
     token = config.get("localxpose_token")
     if not token:
         token = input("[*] Enter your LocalXpose token: ").strip()
         config["localxpose_token"] = token
         save_config(config)
+
     print("[*] Starting LocalXpose...")
-    subprocess.Popen([".server/loclx", "tunnel", "--raw-mode", "http", "--port", port, "--token", token], stdout=subprocess.PIPE)
+    subprocess.Popen([loclx_path, "tunnel", "--raw-mode", "http", "--port", port, "--token", token], stdout=subprocess.PIPE)
 
 # Main menu
 def main_menu():
