@@ -63,16 +63,24 @@ def install_cloudflared():
         return
 
     cloudflared_path = ".server/cloudflared"
-    subprocess.run(["curl", "-s", "-L", "-o", cloudflared_path, url], check=True)
-    os.chmod(cloudflared_path, 0o755)
+    retries = 3
+    for attempt in range(retries):
+        try:
+            subprocess.run(["curl", "-s", "-L", "-o", cloudflared_path, url], check=True)
+            os.chmod(cloudflared_path, 0o755)
+            if os.path.exists(cloudflared_path):
+                print("[*] Cloudflared installed successfully.")
+                return
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                print("[*] Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                print("[!] Cloudflared installation failed after multiple attempts.")
+                exit(1)
 
-    if not os.path.exists(cloudflared_path):
-        print("[!] Cloudflared installation failed. Please check your connection or try again.")
-        exit(1)
-
-    print("[*] Cloudflared installed successfully.")
-
-# Start Cloudflared and parse the tunnel URL
+# Enhanced error handling for Cloudflared tunnel
 def start_cloudflared(port, timeout=30):
     cloudflared_path = ".server/cloudflared"
     if not os.path.exists(cloudflared_path):
@@ -82,28 +90,39 @@ def start_cloudflared(port, timeout=30):
     print("[*] Starting Cloudflared...")
     tunnel_url = None
     start_time = time.time()
-    try:
-        process = subprocess.Popen(
-            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+    retries = 3
 
-        for line in process.stdout:
-            print(f"[Cloudflared Log] {line.strip()}")
-            if "trycloudflare.com" in line:
-                tunnel_url = line.split(" ")[-1].strip()
-                break
-            if time.time() - start_time > timeout:
-                print("[!] Cloudflared timed out. Please check your network or configuration.")
+    while retries > 0:
+        try:
+            process = subprocess.Popen(
+                [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            for line in process.stdout:
+                print(f"[Cloudflared Log] {line.strip()}")
+                if "trycloudflare.com" in line:
+                    tunnel_url = line.split(" ")[-1].strip()
+                    return tunnel_url
+                if time.time() - start_time > timeout:
+                    print("[!] Cloudflared timed out. Retrying...")
+                    process.terminate()
+                    retries -= 1
+                    break
+        except Exception as e:
+            print(f"[!] An error occurred: {e}")
+            retries -= 1
+            if retries == 0:
+                print("[!] Cloudflared failed after multiple attempts.")
+                return None
+        finally:
+            if process:
                 process.terminate()
-                break
 
-    except Exception as e:
-        print(f"[!] An error occurred while starting Cloudflared: {e}")
-
-    return tunnel_url
+    print("[!] Unable to establish Cloudflared tunnel after retries.")
+    return None
 
 # Start LocalXpose and parse the tunnel URL
 def start_localxpose(port, token):
