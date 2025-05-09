@@ -88,7 +88,7 @@ def start_php_server(port):
     subprocess.Popen(["php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.chdir("../..")
 
-# Start Cloudflared
+# Start Cloudflared and parse the tunnel URL
 def start_cloudflared(port):
     cloudflared_path = ".server/cloudflared"
     if not os.path.exists(cloudflared_path):
@@ -96,7 +96,27 @@ def start_cloudflared(port):
         install_cloudflared()
 
     print("[*] Starting Cloudflared...")
-    subprocess.Popen([cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"], stdout=subprocess.PIPE)
+    try:
+        process = subprocess.Popen(
+            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        tunnel_url = None
+        for line in process.stdout:
+            if "trycloudflare.com" in line:
+                tunnel_url = line.split(" ")[-1].strip()
+                break
+
+        if tunnel_url:
+            print(f"[+] Tunnel created successfully: {tunnel_url}")
+        else:
+            print("[!] Failed to create a tunnel. Check Cloudflared logs for more details.")
+
+    except Exception as e:
+        print(f"[!] An error occurred while starting Cloudflared: {e}")
 
 # Start LocalXpose
 def start_localxpose(port):
