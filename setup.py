@@ -1,5 +1,16 @@
 import os
-import subprocess
+import shutil
+
+def check_dependencies():
+    # Check if cloudflared is installed
+    if not shutil.which("cloudflared"):
+        print("Cloudflared is not installed. Please install it using 'pip install cloudflared'.")
+        exit(1)
+
+    # Check if LocalXpose is installed
+    if not shutil.which("lx"):
+        print("LocalXpose is not installed. Please install it manually from https://localxpose.io/")
+        exit(1)
 
 def start_tool():
     print("HatBoy Setup")
@@ -23,4 +34,5 @@ def start_tool():
 
 if __name__ == "__main__":
     print("Welcome to HatBoy Ethical Testing Tool")
+    check_dependencies()
     start_tool()
