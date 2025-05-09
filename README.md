@@ -15,7 +15,12 @@ HatBoy is a tool designed for ethical penetration testing and browser vulnerabil
 5. Choose a hosting option:
     - Localhost
     - Cloudflared
-    - LocalXpose
+    - LocalXpose (requires a token).
+
+### LocalXpose Token
+- The first time you select the LocalXpose option, you will be prompted to enter your LocalXpose token.
+- The token will be saved in the `config.json` file for future use.
+- If you need to update the token, simply delete the `config.json` file and restart the tool.
 
 ## Usage
 ### Generated Links
