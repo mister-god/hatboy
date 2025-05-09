@@ -1,3 +1,4 @@
 {
-    "localxpose_token": ""
+    "localxpose_token": "",
+    "port": "8080"
 }
