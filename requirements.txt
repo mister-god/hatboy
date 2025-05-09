@@ -1,2 +1,4 @@
 # Dependencies for HatBoy Ethical Testing Tool
-cloudflared
+flask              # For handling web requests and templates
+flask-cors         # For enabling Cross-Origin Resource Sharing
+cloudflared        # For setting up Cloudflare tunnels
