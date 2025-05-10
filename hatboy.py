@@ -167,4 +167,7 @@ if __name__ == "__main__":
         exit(1)
 
     print(f"[+] Victim URL: {url}")
-    app.run(host="0.0.0.0", port=port)
+    try:
+        app.run(host="0.0.0.0", port=port)
+    except OSError:
+        print("[!] Port is already in use. Please try with a different port.")
