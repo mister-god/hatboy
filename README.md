@@ -1,12 +1,13 @@
 # HatBoy Ethical Testing Tool
 
 ## Description
-HatBoy is a tool designed for ethical penetration testing and browser vulnerability assessment. It provides options for Localhost, Cloudflared, and LocalXpose tunneling.
+HatBoy is a tool designed for ethical penetration testing and browser vulnerability assessment. It allows you to create phishing templates and capture victim data, including camera, microphone, and location information.
 
 ## Features
 - Launch phishing templates via Localhost, Cloudflared, or LocalXpose.
-- Automatically manage tokens for LocalXpose.
-- Capture data securely and log it for testing purposes.
+- Automatically save victim data in separate folders named after their IP addresses.
+- Capture and log data securely for ethical testing purposes.
+- Editable templates for customization.
 
 ## Installation
 1. Clone the repository:
@@ -25,6 +26,10 @@ HatBoy is a tool designed for ethical penetration testing and browser vulnerabil
    python hatboy.py
    ```
 2. Select a tunneling option and launch the phishing template.
+
+## Templates
+- Templates are stored in the `templates` folder.
+- Edit them to customize the phishing pages.
 
 ## Troubleshooting
 - Ensure PHP and curl are installed on your system.
