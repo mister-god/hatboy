@@ -5,22 +5,6 @@ import time
 from flask import Flask, request, render_template
 import json
 from datetime import datetime
-import socket
-
-def display_banner():
-    print("\033[1;92m")
-    print("██╗  ██╗ █████╗ ████████╗██████╗  ██████╗ ██╗   ██╗")
-    print("██║  ██║██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██║   ██║")
-    print("███████║███████║   ██║   ██████╔╝██║   ██║██║   ██║")
-    print("██╔══██║██╔══██║   ██║   ██   ██╗██║   ██║██║   ██║")
-    print("██║  ██║██║  ██║   ██║   ██████╔╝╚██████╔╝╚██████╔╝")
-    print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
-    print("\033[1;94m")
-    print("                H A T B OY")
-    print("         Ethical Testing Tool v3.2")
-    print("\033[1;93m")
-    print("       Developed by Mister-God")
-    print("\033[0m")
 
 # Flask app
 app = Flask(__name__, template_folder="templates")
@@ -104,19 +88,37 @@ def start_localxpose(port):
         raise Exception("LocalXpose failed to generate a URL")
 
 
+def display_banner():
+    print("\033[1;92m")
+    print("██╗  ██╗ █████╗ ████████╗██████╗  ██████╗ ██╗   ██╗")
+    print("██║  ██║██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██║   ██║")
+    print("███████║███████║   ██║   ██████╔╝██║   ██║██║   ██║")
+    print("██╔══██║██╔══██║   ██║   ██   ██╗██║   ██║██║   ██║")
+    print("██║  ██║██║  ██║   ██║   ██████╔╝╚██████╔╝╚██████╔╝")
+    print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
+    print("\033[1;94m")
+    print("                H A T B OY")
+    print("         Ethical Testing Tool v3.2")
+    print("\033[1;93m")
+    print("       Developed by Mister-God")
+    print("\033[0m")
+
+
 if __name__ == "__main__":
+    display_banner()
     print("Select an option:")
     print("[01] Localhost")
     print("[02] Cloudflared")
     print("[03] LocalXpose")
-    choice = input("Enter your choice: ").strip()
+
+    choice = input("Enter your choice: ").strip()  # Strip whitespace from input
 
     port = 8080
-    if choice == "01":
+    if choice == "01" or choice == "1":
         url = generate_localhost_url(port)
-    elif choice == "02":
+    elif choice == "02" or choice == "2":
         url = start_cloudflared(port)
-    elif choice == "03":
+    elif choice == "03" or choice == "3":
         url = start_localxpose(port)
     else:
         print("[!] Invalid choice")
