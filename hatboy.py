@@ -26,7 +26,7 @@ def display_banner():
     print("╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═██║═╝ ")
     print("\033[1;94m")
     print("                H A T B OY")
-    print("         Ethical Testing Tool v3.1")
+    print("         Ethical Testing Tool v3.2")
     print("\033[1;93m")
     print("       Developed by Mister-God")
     print("\033[0m")
@@ -120,32 +120,29 @@ def start_cloudflared(port: str) -> Optional[str]:
         # Set a timeout for Cloudflared to generate the URL
         start_time = time.time()
         timeout = 30  # 30 seconds timeout
+        retries = 3  # Retry Cloudflared three times if it fails
         
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            print(f"[Cloudflared Log] {line.strip()}")
-            
-            # Look for the generated URL
-            if "trycloudflare.com" in line:
-                return line.split(" ")[-1].strip()
-            
-            # Check if timeout has been reached
-            if time.time() - start_time > timeout:
-                print("[!] Cloudflared failed to generate a URL within the timeout period.")
-                process.terminate()
-                stderr_output = process.stderr.read()
-                print(f"[Cloudflared Error] {stderr_output}")
-                return None
-        
-        # If the process completes without generating a URL
-        process.wait()
-        if process.returncode != 0:
-            stderr_output = process.stderr.read()
-            print("[!] Cloudflared exited with an error.")
-            print(f"[Cloudflared Error] {stderr_output}")
-            raise Exception(stderr_output)
+        for attempt in range(retries):
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                print(f"[Cloudflared Log] {line.strip()}")
+                
+                # Look for the generated URL
+                if "trycloudflare.com" in line:
+                    return line.split(" ")[-1].strip()
+                
+                # Check if timeout has been reached
+                if time.time() - start_time > timeout:
+                    print(f"[!] Attempt {attempt + 1} failed: Cloudflared timed out.")
+                    process.terminate()
+                    stderr_output = process.stderr.read()
+                    print(f"[Cloudflared Error] {stderr_output}")
+                    break  # Exit the while loop and retry
+
+        print("[!] Cloudflared failed after multiple attempts.")
+        return None
     
     except Exception as e:
         print(f"[!] Error starting Cloudflared: {e}")
