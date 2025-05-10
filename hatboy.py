@@ -4,7 +4,6 @@ import subprocess
 import platform
 import shutil
 import time
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Optional
 
 CONFIG_FILE = "config.json"
@@ -79,6 +78,28 @@ def install_cloudflared():
                 print("[!] Cloudflared installation failed after multiple attempts.")
                 exit(1)
 
+# Start a Cloudflared tunnel
+def start_cloudflared(port: str) -> Optional[str]:
+    cloudflared_path = ".server/cloudflared"
+    if not os.path.exists(cloudflared_path):
+        print("[!] Cloudflared binary is missing. Attempting to reinstall...")
+        install_cloudflared()
+    try:
+        print("[*] Starting Cloudflared...")
+        process = subprocess.Popen(
+            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for line in process.stdout:
+            print(f"[Cloudflared Log] {line.strip()}")
+            if "trycloudflare.com" in line:
+                return line.split(" ")[-1].strip()
+    except Exception as e:
+        print(f"[!] Error starting Cloudflared: {e}")
+    return None
+
 # Install LocalXpose
 def install_localxpose():
     print("[*] Installing LocalXpose...")
@@ -98,12 +119,9 @@ def install_localxpose():
         try:
             subprocess.run(["curl", "-s", "-L", "-o", loclx_path, url], check=True)
             os.chmod(loclx_path, 0o755)
-            if os.path.exists(loclx_path) and os.access(loclx_path, os.X_OK):
+            if os.path.exists(loclx_path):
                 print("[*] LocalXpose installed successfully.")
                 return
-            else:
-                print("[!] LocalXpose binary is not executable. Please check the file.")
-                exit(1)
         except subprocess.CalledProcessError as e:
             print(f"[!] Attempt {attempt + 1}/{retries} failed: {e}")
             if attempt < retries - 1:
@@ -113,11 +131,35 @@ def install_localxpose():
                 print("[!] LocalXpose installation failed after multiple attempts.")
                 exit(1)
 
+# Start a LocalXpose tunnel
+def start_localxpose(port: str, token: str) -> Optional[str]:
+    loclx_path = ".server/loclx"
+    if not os.path.exists(loclx_path):
+        print("[!] LocalXpose binary is missing. Attempting to reinstall...")
+        install_localxpose()
+    try:
+        print("[*] Starting LocalXpose...")
+        process = subprocess.Popen(
+            [loclx_path, "tunnel", "http", f"--port={port}", f"--token={token}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for line in process.stdout:
+            print(f"[LocalXpose Log] {line.strip()}")
+            if "https://" in line:
+                return line.strip()
+    except Exception as e:
+        print(f"[!] Error starting LocalXpose: {e}")
+    return None
+
 # Start a PHP server
 def start_php_server(port: str):
     print(f"[*] Starting PHP server on port {port}...")
     os.chdir(".server/www")
-    subprocess.Popen([f"php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(
+        ["php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
     os.chdir("../..")
 
 # Main menu
