@@ -8,21 +8,27 @@ HatBoy is a tool designed for ethical penetration testing and browser vulnerabil
 - Automatically manage tokens for LocalXpose.
 - Capture data securely and log it for testing purposes.
 
-## Usage
+## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/hatboy.git
+   git clone https://github.com/mister-god/hatboy.git
    cd hatboy
    ```
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-3. Run the tool:
+
+## Usage
+1. Run the tool:
    ```bash
    python hatboy.py
    ```
-4. Select a tunneling option and launch the phishing template.
+2. Select a tunneling option and launch the phishing template.
+
+## Troubleshooting
+- Ensure PHP and curl are installed on your system.
+- Update your LocalXpose or Cloudflared binaries if errors occur.
 
 ## Disclaimer
 This tool is for educational and ethical use only. Unauthorized use is strictly prohibited.
