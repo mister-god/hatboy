@@ -111,7 +111,7 @@ def start_cloudflared(port: str) -> Optional[str]:
     try:
         print("[*] Starting Cloudflared...")
         process = subprocess.Popen(
-            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}", "--loglevel", "debug"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -135,13 +135,17 @@ def start_cloudflared(port: str) -> Optional[str]:
             if time.time() - start_time > timeout:
                 print("[!] Cloudflared failed to generate a URL within the timeout period.")
                 process.terminate()
+                stderr_output = process.stderr.read()
+                print(f"[Cloudflared Error] {stderr_output}")
                 return None
         
         # If the process completes without generating a URL
         process.wait()
         if process.returncode != 0:
+            stderr_output = process.stderr.read()
             print("[!] Cloudflared exited with an error.")
-            raise Exception(process.stderr.read())
+            print(f"[Cloudflared Error] {stderr_output}")
+            raise Exception(stderr_output)
     
     except Exception as e:
         print(f"[!] Error starting Cloudflared: {e}")
