@@ -1,10 +1,9 @@
 import os
 import platform
 import subprocess
+import sys
 import time
-from typing import Optional
 
-# Display a professional tool banner
 def display_banner():
     print("\033[1;92m")
     print("██╗  ██╗ █████╗ ████████╗██████╗  ██████╗ ██╗   ██╗")
@@ -20,7 +19,23 @@ def display_banner():
     print("       Developed by Mister-God")
     print("\033[0m")
 
-# Function to download and install Cloudflared
+def install_python_dependencies():
+    print("[*] Installing Python dependencies from requirements.txt...")
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], check=True)
+        print("[*] Python dependencies installed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Failed to install Python dependencies: {e}")
+        exit(1)
+
+def check_and_install_tool(tool_name):
+    print(f"[*] Checking for {tool_name}...")
+    if not shutil.which(tool_name):
+        print(f"[!] {tool_name} is not installed. Please install it manually and try again.")
+        exit(1)
+    else:
+        print(f"[*] {tool_name} is already installed.")
+
 def install_cloudflared():
     print("[*] Installing Cloudflared...")
     if not os.path.exists(".server"):
@@ -54,73 +69,41 @@ def install_cloudflared():
         print("[!] Unsupported operating system.")
         return
 
-    # Download the binary
-    try:
-        subprocess.run(["curl", "-s", "-L", "-o", cloudflared_path, url], check=True)
-        os.chmod(cloudflared_path, 0o755)
-        print("[*] Cloudflared installed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"[!] Failed to download Cloudflared: {e}")
-        exit(1)
+    # Download the binary with retry mechanism
+    retries = 3
+    for attempt in range(1, retries + 1):
+        try:
+            print(f"[*] Attempt {attempt}/{retries}: Downloading Cloudflared...")
+            subprocess.run(["curl", "-s", "-L", "--max-time", "30", "-o", cloudflared_path, url], check=True)
+            os.chmod(cloudflared_path, 0o755)
+            print("[*] Cloudflared installed successfully.")
+            return
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Attempt {attempt} failed: {e}")
+            if attempt < retries:
+                print("[*] Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                print("[!] Cloudflared installation failed after multiple attempts. Check your network connection or try manually.")
+                exit(1)
 
-# Function to start a Cloudflared tunnel
-def start_cloudflared(port: int) -> Optional[str]:
-    cloudflared_path = ".server/cloudflared"
-    if platform.system().lower() == "windows":
-        cloudflared_path += ".exe"
-
-    # Verify if the Cloudflared binary exists
-    if not os.path.exists(cloudflared_path):
-        print("[!] Cloudflared binary is missing. Attempting to install...")
-        install_cloudflared()
-
-    try:
-        print("[*] Starting Cloudflared tunnel...")
-        process = subprocess.Popen(
-            [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}", "--loglevel", "debug"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        log_file = ".cloudflared.log"
-        with open(log_file, "w") as log:
-            start_time = time.time()
-            timeout = 30  # Timeout in seconds
-
-            # Continuously check for the generated URL
-            while True:
-                line = process.stdout.readline()
-                log.write(line)
-                if "trycloudflare.com" in line:
-                    url = line.split(" ")[-1].strip()
-                    print(f"[+] Cloudflared Tunnel URL: {url}")
-                    return url
-
-                # Handle timeout
-                if time.time() - start_time > timeout:
-                    print("[!] Cloudflared failed to generate a URL within the timeout period.")
-                    process.terminate()
-                    with open(log_file, "r") as log_read:
-                        print("[Cloudflared Logs]")
-                        print(log_read.read())
-                    return None
-    except Exception as e:
-        print(f"[!] Error starting Cloudflared: {e}")
-        return None
-
-# Function to stop Cloudflared
-def stop_cloudflared():
-    try:
-        print("[*] Stopping Cloudflared...")
-        if platform.system().lower() == "windows":
-            subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            subprocess.run(["pkill", "-f", "cloudflared"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except Exception as e:
-        print(f"[!] Error stopping Cloudflared: {e}")
-
-# Usage within the script
-if __name__ == "__main__":
+def setup_tool():
+    # Display the banner
     display_banner()
-    install_cloudflared()  # Install Cloudflared if not already installed
-    start_cloudflared(8080)  # Start Cloudflared tunnel on port 8080
+
+    # Step 1: Install Python dependencies
+    install_python_dependencies()
+
+    # Step 2: Check and install PHP
+    check_and_install_tool("php")
+
+    # Step 3: Check and install curl
+    check_and_install_tool("curl")
+
+    # Step 4: Install Cloudflared
+    install_cloudflared()
+
+    print("[*] All dependencies installed and managed successfully. You can now run 'python hatboy.py' to start the tool.")
+
+if __name__ == "__main__":
+    setup_tool()
