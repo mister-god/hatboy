@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil  # Importing shutil to fix the NameError
 import subprocess
 import sys
 import time
